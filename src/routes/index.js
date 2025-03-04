@@ -3,7 +3,8 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 // Import pages
 import Home from "@/pages/Home.vue";
-import Scenarios from "@/pages/Scenarios.vue";
+import ManageScenarios from '@/pages/ManageScenarios.vue';
+import AddScenario from '@/pages/AddScenario.vue';
 import Profile from "@/pages/Profile.vue";
 import Workbook from "@/pages/Workbook.vue";
 import WorkbookDetails from "@/pages/WorkbookDetails.vue";
@@ -13,7 +14,8 @@ import CreateWorkbook from "@/pages/CreateWorkbook.vue";
 
 const routes = [
   { path: "/", name: "Home", component: Home },
-  { path: "/scenarios", name: "Scenarios", component: Scenarios, meta: { requiresAuth: true } },
+  { path: "/scenarios", name: "ManageScenarios", component: ManageScenarios, meta: { requiresAuth: true } },
+  { path: "/add-scenario", name: "AddScenario", component: AddScenario, meta: { requiresAuth: true } },
   { path: "/profile", name: "Profile", component: Profile, meta: { requiresAuth: true } },
   { path: "/workbook", name: "Workbook", component: Workbook, meta: { requiresAuth: true } },
   { path: "/workbook/:id", name: "WorkbookDetails", component: WorkbookDetails, meta: { requiresAuth: true } },
