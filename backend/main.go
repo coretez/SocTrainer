@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"backend/config"
-	"backend/handlers"
+	"backend/handlers" // This should be "backend/handlers"
+
+	// "backend/fetch_scenario"  // Remove this line
 
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -19,8 +21,11 @@ func main() {
 	router := mux.NewRouter()
 
 	// Register API routes
-	router.HandleFunc("/api/replay", handlers.ReplayHandler).Methods("POST")
-	router.HandleFunc("/api/replay/progress", handlers.ProgressHandler).Methods("GET")
+	router.HandleFunc("/api/replay", handlers.ReplayHandler).Methods("POST")           // Changed for convenience, should likely match the data
+	router.HandleFunc("/api/replay/progress", handlers.ProgressHandler).Methods("GET") // Changed for convenience, should likely match the data
+
+	// NEW endpoint
+	router.HandleFunc("/api/get-data", handlers.GetDataHandler).Methods("POST") // Changed for convenience, should likely match the data
 
 	// CORS Middleware
 	corsHandler := ghandlers.CORS(
