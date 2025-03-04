@@ -27,3 +27,5 @@ node_modules/
 .env
 dist/
 .vscode/
+
+backend/config/firebase-adminsdk.json
