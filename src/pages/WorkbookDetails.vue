@@ -27,7 +27,7 @@
         {{ replayInProgress ? "Replaying..." : "Start Replay" }}
       </button>
 
-      <p v-if="message" class="mt-2 text-green-600">{{ message }}</p>
+      <!--p v-if="message" class="mt-2 text-green-600">{{ message }}</p -->
       <p v-if="errorMessage" class="mt-2 text-red-600">{{ errorMessage }}</p>
 
       <!-- Scenario Replay Progress -->
