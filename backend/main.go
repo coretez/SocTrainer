@@ -26,6 +26,7 @@ func main() {
 
 	// NEW endpoint
 	router.HandleFunc("/api/get-data", handlers.GetDataHandler).Methods("POST") // Changed for convenience, should likely match the data
+	router.HandleFunc("/api/upload-scenario", handlers.UploadScenarioHandler).Methods("POST")
 
 	// CORS Middleware
 	corsHandler := ghandlers.CORS(
