@@ -139,7 +139,6 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "fire
         apiData.value = updatedData;
       };
   
-      // 🔹 Upload Scenario (via Go Backend)
       const uploadScenario = async () => {
         if (!apiData.value || !newScenario.value.name || !newScenario.value.description) {
             alert("⚠ Please fill in all fields and ensure data is available.");
@@ -153,52 +152,33 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "fire
 
         try {
             uploading.value = true;
-            console.log("📤 Uploading scenario...");
-
-            const storage = getStorage();
+            console.log("📤 Uploading scenario to Go backend...");
 
             // Convert apiData to a JSON Blob
             const jsonBlob = new Blob([JSON.stringify(apiData.value)], { type: "application/json" });
 
-            // Define a unique filename
-            const filePath = `scenarios/${newScenario.value.name.replace(/\s+/g, "_")}_${Date.now()}.json`;
-            console.log("📝 Generated file path:", filePath);
+            // Create a FormData object
+            const formData = new FormData();
+            formData.append("file", jsonBlob, filename.value);
+            formData.append("name", newScenario.value.name);
+            formData.append("description", newScenario.value.description);
+            formData.append("createdBy", user.value.uid);
 
-            // ✅ Ensure `storageRef` is correctly defined
-            const fileRef = storageRef(storage, filePath); 
-            console.log("🔗 Firebase Storage reference created.");
+            // Send request to Go backend
+            const response = await axios.post("http://localhost:8080/api/upload-scenario", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
 
-            // Upload JSON Blob
-            await uploadBytes(fileRef, jsonBlob);
-            console.log("✅ Upload to Firebase Storage successful.");
-
-            // Get file download URL
-            const fileURL = await getDownloadURL(fileRef);
-            console.log("🌍 File available at:", fileURL);
-
-            // Save scenario details in Firestore
-            const scenarioData = {
-                name: newScenario.value.name,
-                description: newScenario.value.description,
-                file_name: filePath,
-                stream: fileURL,
-                createdBy: user.value.uid,
-            };
-
-            console.log("📄 Storing scenario metadata in Firestore...");
-            const docRef = await addDoc(collection(db, "scenarios"), scenarioData);
-            console.log("✅ Scenario saved in Firestore with ID:", docRef.id);
+            console.log("✅ Scenario uploaded:", response.data.file_url);
+            alert(`Scenario uploaded successfully: ${response.data.file_url}`);
 
             // Reset form
             newScenario.value = { name: "", description: "" };
             apiData.value = null;
             uploading.value = false;
-
-            console.log("✅ Scenario uploaded successfully.");
-            alert("Scenario uploaded successfully.");
         } catch (error) {
             console.error("🔥 Error uploading scenario:", error);
-            alert(`Error uploading scenario: ${error.message}`);
+            alert("Error uploading scenario.");
         } finally {
             uploading.value = false;
         }
