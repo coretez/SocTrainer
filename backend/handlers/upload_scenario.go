@@ -71,7 +71,7 @@ func UploadFileToFirebase(bucketName, fileName string, file io.Reader) (string, 
 	defer client.Close()
 
 	bucket := client.Bucket(bucketName) //The bucketName is just the name, without gs://
-	obj := bucket.Object(fileName)
+	obj := bucket.Object(fmt.Sprintf("scenarios/%s", fileName))
 	wc := obj.NewWriter(ctx)
 
 	n, err := io.Copy(wc, file)
@@ -84,6 +84,6 @@ func UploadFileToFirebase(bucketName, fileName string, file io.Reader) (string, 
 	}
 
 	// Construct the URL correctly using the bucketName without the gs:// prefix.
-	url := fmt.Sprintf("https://storage.googleapis.com/%s/scenarios/%s", bucketName, fileName)
+	url := fmt.Sprintf("https://storage.googleapis.com/%s/%s", bucketName, fileName)
 	return url, nil
 }
