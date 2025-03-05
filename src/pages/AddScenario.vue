@@ -5,6 +5,7 @@
       <div v-if="loading" class="text-lg text-gray-600 italic">Loading Profile...</div>
   
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Profile Information -->
         <div class="bg-white shadow-md rounded-lg overflow-hidden">
           <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-700">Profile Information</h2>
@@ -21,6 +22,7 @@
           </div>
         </div>
   
+        <!-- Scenario Details -->
         <div class="bg-white shadow-md rounded-lg overflow-hidden">
           <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-700">Scenario Details</h2>
@@ -47,6 +49,7 @@
               placeholder="Enter scenario description"
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             />
+  
             <label class="block text-gray-700 text-sm font-bold mb-2" for="gridAccount">
               Grid Account
             </label>
@@ -104,21 +107,32 @@
             >
               Create Scenario
             </button>
-            <!-- Data Display Area -->
-            <div v-if="apiData" class="mt-4">
-              <h3 class="text-lg font-semibold text-gray-700">API Data</h3>
-              <pre class="bg-gray-100 rounded p-3 overflow-auto">
-                {{ JSON.stringify(apiData, null, 2) }}
-              </pre>
             </div>
           </div>
         </div>
       </div>
+    <div>
+        <!-- API Data Display -->
+        <div v-if="apiData" class="mt-4">
+            <h3 class="text-lg font-semibold text-gray-700">API Data</h3>
+            
+            <!-- Pretty JSON Display -->
+            <pre class="bg-gray-100 rounded p-3 overflow-auto text-xs">
+            {{ JSON.stringify(apiData, null, 2) }}
+            </pre>
+
+            <!-- Large Text Area for Full Responsetextarea
+            class="w-full mt-4 p-3 border border-gray-300 rounded-md bg-gray-50 text-gray-800"
+            rows="10"
+            v-model="formattedApiData"
+            readonly
+            ></textarea -->
+    </div>
     </div>
   </template>
   
   <script>
-  import { ref, onMounted } from "vue";
+  import { ref, computed, onMounted } from "vue";
   import { getFirestore, doc, getDoc, setDoc, collection } from "firebase/firestore";
   import { getAuth, onAuthStateChanged } from "firebase/auth";
   import { useRouter } from "vue-router";
@@ -134,21 +148,22 @@
         searchString: "",
         startTime: null,
         endTime: null,
-        gridAccount: "", //ADD this!
-        site:"",
-        token:""
+        gridAccount: "",
+        site: "",
+        token: "",
       });
       const newScenario = ref({ name: "", description: "" });
       const filename = ref({ name: "somename.json" });
       const user = ref(null);
       const router = useRouter();
-  
       const db = getFirestore();
       const auth = getAuth();
   
+      // Computed property to store formatted API data for text area
+      const formattedApiData = computed(() => JSON.stringify(apiData.value, null, 2));
+  
       const fetchProfile = async () => {
         if (!user.value) {
-          console.warn("🔴 User not authenticated. Skipping fetch.");
           loading.value = false;
           return;
         }
@@ -159,9 +174,7 @@
   
           if (docSnap.exists()) {
             profile.value = docSnap.data();
-            console.log("✅ Profile data:", profile.value);
           } else {
-            console.warn("⚠️ No profile found for this user!");
             profile.value = { message: "No profile created" };
           }
         } catch (error) {
@@ -172,81 +185,47 @@
       };
   
       const getData = async () => {
-             console.log(profile.value.ScenarioSiteUrl)  //If these values show up, it works
-             console.log(profile.value.ScenarioSiteToken )
-             console.log( searchData.value )
+        searchData.value.site = profile.value.ScenarioSiteUrl;
+        searchData.value.token = profile.value.ScenarioSiteToken;
   
-          //Add data from profiles to searchdata
-               searchData.value.site=profile.value.ScenarioSiteUrl
-               searchData.value.token=profile.value.ScenarioSiteToken
+        try {
+          const response = await axios.post("http://localhost:8080/api/get-data", searchData.value);
+          apiData.value = response.data;
+        } catch (error) {
+          console.error("🔥 Error fetching data from backend:", error);
+          alert(`🔥 Error fetching data from backend: ${error.message}`);
+        }
+      };
   
-  
-              console.log('Getting data with:', searchData.value);
-              try {
-                  // Make a POST request to your Go backend's /api/get-data endpoint
-                  const response = await axios.post('http://localhost:8080/api/get-data', searchData.value);
-  
-                  // Handle the response from the backend
-                  console.log('✅ Data from backend:', response.data);
-              //   alert(`Created this to a client: ${response.data}`)  //If you get a message, delete code!
-  
-                console.log("Stringifying the data")
-                 const stringData = JSON.stringify(response.data)
-                 alert(`String  ${stringData}`)   //Set this up for now, delete once we're done with step 5
-  
-                  //Store from server
-                   apiData.value = response.data;  //Set it to work
-  
-  
-  
-              } catch (error) {
-                  console.error('🔥 Error fetching data from backend:', error);
-                  alert(`🔥 Error fetching data from backend: ${error.message}`);
-              }
-  
-          }
-  
-          const createScenario = async () => {
-              try {
-                  // Create a new document reference in the "scenarios" collection
-                  const newScenarioRef = doc(collection(db, "scenarios"));
-  
-                  // Set the data for the new scenario
-                  await setDoc(newScenarioRef, {
-                      ScenarioName: newScenario.name,  //Use Scenario name
-                      ScenarioData: searchData.value,    //Search Data
-                    BackendData: apiData.value,  //add api data
-                      description: newScenario.description,   // Use description
-                      FileName: filename.name, //Hardcode filename
-                  });
-  
-                  console.log("✅ Created a new scenario with:", newScenario.name);
-                  alert(`Created a new scenario named ${newScenario.name} with ${newScenario.description}`);
-                  router.push('/scenarios'); // Redirect to the scenarios page
-              } catch (error) {
-                  console.error("🔥 Error adding the scenario:", error);
-                  alert(`Error creating the scenario: ${error.message}`);
-              }
-          };
-  
-          onMounted(() => {
-              onAuthStateChanged(auth, (loggedInUser) => {
-                  if (loggedInUser) {
-                      console.log(`✅ User authenticated: ${loggedInUser.uid}`);
-                      user.value = loggedInUser;
-                      fetchProfile();
-                  } else {
-                      console.warn("❌ No user logged in.");
-                      loading.value = false;
-                  }
-              });
+      const createScenario = async () => {
+        try {
+          const newScenarioRef = doc(collection(db, "scenarios"));
+          await setDoc(newScenarioRef, {
+            ScenarioName: newScenario.name,
+            ScenarioData: searchData.value,
+            BackendData: apiData.value,
+            description: newScenario.description,
+            FileName: filename.value.name,
           });
+          alert(`Created scenario: ${newScenario.name}`);
+          router.push("/scenarios");
+        } catch (error) {
+          console.error("🔥 Error adding scenario:", error);
+        }
+      };
   
-          return { profile, loading, searchData, newScenario,filename, getData, createScenario, apiData };
-      },
+      onMounted(() => {
+        onAuthStateChanged(auth, (loggedInUser) => {
+          if (loggedInUser) {
+            user.value = loggedInUser;
+            fetchProfile();
+          } else {
+            loading.value = false;
+          }
+        });
+      });
+  
+      return { profile, loading, searchData, newScenario, filename, getData, createScenario, apiData, formattedApiData };
+    },
   };
   </script>
-  
-  <style scoped>
-  /* You may not need any scoped styles */
-  </style>
